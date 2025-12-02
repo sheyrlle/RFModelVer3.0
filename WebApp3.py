@@ -4,22 +4,17 @@ import joblib
 from datetime import datetime
 import os
 import base64
-import altair as alt # <-- Added import for charts
+import altair as alt
 import sys
 
-# -------------------------------
-# 1. FILE PATHS AND INITIALIZATION
-# -------------------------------
 MODEL_PATH = "C:/Users/Sherylle Rose/Desktop/rfmodeloct26/rf_model.pkl"
 VECTORIZER_PATH = "C:/Users/Sherylle Rose/Desktop/rfmodeloct26/vectorizer.pkl"
-# --- Logo Paths ---
+
 HOME_LOGO_PATH = "C:/Users/Sherylle Rose/homeplogo.png"
 SIDEBAR_LOGO_PATH = "C:\\Users\\Sherylle Rose\\ccitlogo.png"
-# --- Background Image Path (Set your path here) ---
 BACKGROUND_IMAGE_PATH = "C:\\Users\\Sherylle Rose\\bg_final.png"
-# ---------------------------------------------------
 
-# Define Original/Standard Colors
+
 LIGHT_BG = "#e8f3f8"
 DARK_PRIMARY = "#1f3a52" # <-- This is the color used for the dark blue elements
 ACCENT_BLUE = "#1f7fc1" # <-- This color will be used for the graph bars and table header
@@ -327,7 +322,7 @@ sidebar_button_with_active_state("History", "History", "📜")
 # -------------------------------
 if page == "Home":
     
-    # CONDITIONAL CSS INJECTION FOR HOME PAGE BACKGROUND
+    # CONDITIONAL CSS INJECTION FOR HOME PAGE BACKGROUND AND SCROLLING
     if bg_base64:
         home_page_css = f"""
         <style>
@@ -338,11 +333,11 @@ if page == "Home":
             background-attachment: fixed !important; 
             background-repeat: no-repeat !important; 
         }}
-        /* Ensure the inner block container is transparent so the fixed background is visible */
+        /* ⭐ MODIFIED: SET OVERFLOW-Y TO HIDDEN FOR HOME PAGE ⭐ */
         .block-container {{
             background-image: none !important;
             background-color: transparent !important;
-            overflow-y: auto !important;
+            overflow-y: hidden !important; /* Forces non-scrollable */
         }}
         </style>
         """
@@ -411,13 +406,13 @@ if page == "Home":
 # -------------------------------
 elif page == "Summary":
     
-    # Conditional CSS injection (ensures no background image is used)
+    # Conditional CSS injection (ensures no background image is used and controls scrolling)
     st.markdown("""
     <style>
     .block-container {
         background-image: none !important;
         background-color: transparent !important;
-        overflow-y: auto !important; 
+        overflow-y: hidden !important; /* Forces non-scrollable for Summary page */
     }
     </style>
     """, unsafe_allow_html=True)
@@ -466,6 +461,23 @@ elif page == "Summary":
             
             # Define the order and custom sorting (Formal order: Strong, Normal, Weak)
             order = ["Strong Competence", "Normal Competence", "Weak Competence"]
+            
+            # ⭐ RECOMMENDED CHANGE START: Ensure all categories are present in the table data ⭐
+            # Create a full DataFrame of all possible competence levels
+            df_full = pd.DataFrame({'Competence Level': order})
+            
+            # Merge the full list with the calculated counts, filling missing counts with 0
+            sentiment_counts = pd.merge(
+                df_full, 
+                sentiment_counts, 
+                on='Competence Level', 
+                how='left'
+            ).fillna(0)
+            
+            # Ensure Count is an integer for display
+            sentiment_counts['Count'] = sentiment_counts['Count'].astype(int)
+            
+            # Set Categorical order for correct sorting/plotting
             sentiment_counts['Competence Level'] = pd.Categorical(
                 sentiment_counts['Competence Level'], categories=order, ordered=True
             )
@@ -490,6 +502,12 @@ elif page == "Summary":
             # Display the chart
             st.altair_chart(chart, use_container_width=True)
 
+            # Display the summary table below the chart
+            st.markdown("### Count Summary Table")
+            # Apply custom CSS class for the table display
+            st.markdown(sentiment_counts.to_html(index=False, classes="formal-blended-table"), unsafe_allow_html=True)
+            # ⭐ RECOMMENDED CHANGE END ⭐
+            
         else:
             st.info("No sentiment data recorded yet. Submit a response on the Home page to populate this summary.")
     else:
@@ -501,7 +519,7 @@ elif page == "Summary":
 # -------------------------------
 elif page == "History":
     
-    # CONDITIONAL CSS INJECTION FOR HISTORY PAGE (ensures no background image is used)
+    # CONDITIONAL CSS INJECTION FOR HISTORY PAGE (ensures scrolling works)
     st.markdown("""
     <style>
     .block-container {
@@ -558,17 +576,6 @@ elif page == "History":
             st.success("History successfully deleted.")
             # Important: Clear the state after showing the message so it doesn't reappear on other pages
             st.session_state.history_deleted = False 
-
-# -------------------------------
-# 9. Hide default Streamlit UI elements
-# -------------------------------
-st.markdown("""
-<style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
 
 # -------------------------------
 # 9. Hide default Streamlit UI elements
