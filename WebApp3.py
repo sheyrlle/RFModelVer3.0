@@ -534,18 +534,41 @@ elif page == "History":
     else:
         st.info("History file not found.")
 
-    # Use a narrow column for both the button and its results to ensure alignment.
-    col_delete_button = st.columns([1, 5])[0] 
+    # ⭐ FIX: Create two columns to align the button and the success message horizontally
+    col_delete_button, col_delete_message = st.columns([1, 3]) 
     
     with col_delete_button:
         # Delete history button
         if st.button("Delete History", use_container_width=True):
             if os.path.exists(HISTORY_FILE):
                 os.remove(HISTORY_FILE)
-                st.success("History successfully deleted.")
+                # Success message is now shown in the second column after rerun
+                st.session_state.history_deleted = True 
                 st.rerun() # Use st.rerun to refresh the page content after deletion
             else:
                 st.info("No history to delete.")
+    
+    # ⭐ FIX: Display the success message in the second column
+    with col_delete_message:
+        # Check if the success state is set, and display the message
+        if st.session_state.get("history_deleted", False):
+            # The st.success alert is placed in this column.
+            # You might need to add a small vertical space (st.markdown) if the button
+            # and message don't align vertically perfectly due to padding/margins.
+            st.success("History successfully deleted.")
+            # Important: Clear the state after showing the message so it doesn't reappear on other pages
+            st.session_state.history_deleted = False 
+
+# -------------------------------
+# 9. Hide default Streamlit UI elements
+# -------------------------------
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
 
 # -------------------------------
 # 9. Hide default Streamlit UI elements
